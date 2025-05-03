@@ -1,0 +1,13 @@
+flask~=3.0.3
+flask-smorest
+python-dotenv
+sqlalchemy~=2.0.32
+sqlalchemy-model
+flask-sqlalchemy
+marshmallow~=3.22.0
+flask-jwt-extended
+passlib
+flask-migrate
+gunicorn
+requests
+pymysql
