@@ -97,7 +97,10 @@ const EvaluatorDashboard = () => {
       <header className="user-dashboard-header">
         <div className="user-dashboard-header-content">
           <h1 className="user-dashboard-title">Evaluator Dashboard</h1>
-          <button onClick={handleLogout} className="user-dashboard-logout">Logout</button>
+          <div style={{display: 'flex', gap: '1rem'}}>
+            <button onClick={() => navigate('/ai-evaluator')} className="user-dashboard-btn">AI Evaluator</button>
+            <button onClick={handleLogout} className="user-dashboard-logout">Logout</button>
+          </div>
         </div>
       </header>
 

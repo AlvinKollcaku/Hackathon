@@ -1,71 +1,65 @@
-import os, json, openai
+import os
+import json
+from openai import OpenAI
 from flask import current_app
-from models import Bid, Criterion, Score
-from DB import db
-from decimal import Decimal
 
-# 1) configure your key
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def generate_ai_scores(bid_id):
-    bid = Bid.query\
-             .options(db.joinedload(Bid.bid_items).joinedload("criterion"))\
-             .get(bid_id)
-    # 2) Prepare criteria + submitted values
-    entries = []
-    for item in bid.bid_items:
-        entries.append({
-            "criterion":       item.criterion.name,
-            "type":            item.criterion.type,        # e.g. "price" or "technical"
-            "weight_pct":      float(item.criterion.weight_pct),
-            "max_score":       item.criterion.max_score,
-            "value_text":      item.value_text,
-            "value_numeric":   float(item.value_numeric) if item.value_numeric else None
-        })
-
-    # 3) Compose your prompt
-    system = (
-        "You are a tender-evaluation assistant. "
-        "For each criterion, compare the vendor’s submitted value "
-        "to the requirement and return a score between 0 and max_score, "
-        "plus a short justification."
+def evaluate_documents(req_df, bid_df):
+    # Load OpenAI API key from config or environment
+    key = (
+        current_app.config.get("OPENAI_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
     )
-    user = f"Here are the entries:\n{json.dumps(entries, indent=2)}\n\nRespond with JSON:\n"
-    user += "[{{\"criterion\":\"...\",\"ai_score\":...,\"comment\":\"...\"}}, ...]"
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY is not set in config or environment")
 
-    # 4) Call the LLM
-    resp = openai.ChatCompletion.create(
-        model="gpt-4",
+    # Instantiate the OpenAI client
+    client = OpenAI(api_key=key)
+
+    # Serialize DataFrames to list-of-dicts
+    req_json = req_df.to_dict(orient="records")
+    bid_json = bid_df.to_dict(orient="records")
+
+    # Build the prompt
+    prompt = f"""
+You are a procurement-evaluation assistant.
+Compare the *requirements* table to the *bid* table below.
+
+Requirements (as JSON):
+```json
+{json.dumps(req_json, indent=2)}
+```
+
+Vendor’s bid (as JSON):
+```json
+{json.dumps(bid_json, indent=2)}
+```
+
+Please:
+1. For each requirement, indicate whether the bid meets it.
+2. Assign a score from 0–100 for each item.
+3. Calculate an overall total score out of 100.
+4. Provide a brief human-readable summary.
+
+Return a JSON object with keys:
+- `evaluations`: array of {{ requirement, meets, score }}
+- `total_score`: number
+- `summary`: string
+"""
+
+    # Call the Chat Completions API
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[
-            {"role":"system", "content": system},
-            {"role":"user",   "content": user}
+            {"role": "system", "content": "You are a helpful procurement evaluation assistant."},
+            {"role": "user",   "content": prompt}
         ],
-        temperature=0.2,
+        temperature=0.2
     )
 
-    payload = resp.choices[0].message.content.strip()
-    # 5) Parse JSON
-    results = json.loads(payload)
-
-    # 6) Save into Score rows
-    total = Decimal(0)
-    for r in results:
-        crit = Criterion.query.filter_by(tender_id=bid.tender_id, name=r["criterion"]).first()
-        ai_s = Decimal(r["ai_score"])
-        score = Score(
-            bid_id=bid.id,
-            criterion_id=crit.id,
-            evaluator_id=None,           # or a system-user ID
-            ai_suggested=ai_s,
-            evaluator_score=None,
-            final_score=ai_s,
-            comment=r["comment"]
-        )
-        db.session.add(score)
-        # accumulate weighted sum
-        total += ai_s * Decimal(crit.weight_pct) / Decimal(100)
-
-    bid.total_ai_score = total
-    bid.total_final_score = total  # until human adjusts
-    db.session.commit()
-    return results
+    # Extract and parse response
+    text = resp.choices[0].message.content
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {"raw": text}

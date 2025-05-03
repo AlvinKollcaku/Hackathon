@@ -11,7 +11,7 @@ from schemas  import (
     PlainTenderSchema, TenderSchema,
     PlainAttachmentSchema, AttachmentSchema, BidSchema
 )
-from utils import proc_officer_required
+from roleBased import proc_officer_required
 from google_drive import upload_file_to_drive
 
 

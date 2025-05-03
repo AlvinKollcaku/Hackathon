@@ -5,6 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import SupplierDashboard from './pages/SupplierDashboard';
 import EvaluatorDashboard from './pages/EvaluatorDashboard';
+import AIEvaluator from './pages/AIEvaluator';
 import ProtectedRoute from './utils/ProtectedRoute';
 import { isAuthenticated } from './utils/authUtils';
 import './App.css';
@@ -51,6 +52,12 @@ function App() {
           <Route path="/evaluator" element={
             <ProtectedRoute allowedRoles={['evaluator']}>
               <EvaluatorDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/ai-evaluator" element={
+            <ProtectedRoute allowedRoles={['evaluator']}>
+              <AIEvaluator />
             </ProtectedRoute>
           } />
           

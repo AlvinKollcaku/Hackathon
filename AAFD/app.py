@@ -6,6 +6,7 @@ from flask_smorest import Api
 from resources.userRoutes import user_bp as usersBlueprint
 from resources.tenderRoutes import bp as tendersBlueprint
 from resources.attachmentRoutes import attachments_bp
+from resources.ai_routes import ai_bp
 
 
 from flask_jwt_extended import JWTManager
@@ -34,7 +35,7 @@ def create_app(db_url=None):
     #1) that we have defined and if we havent defined that we use sqlite which will create a data.db file
     #1)using environment variables to connect to DB so that you dont share the info when sharing the code
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    app.config["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
     # Celery
     CELERY_BROKER_URL = os.getenv("REDIS_URL")
     CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
@@ -104,6 +105,7 @@ def create_app(db_url=None):
     api.register_blueprint(usersBlueprint)
     api.register_blueprint(tendersBlueprint)
     api.register_blueprint(attachments_bp)
+    api.register_blueprint(ai_bp)
 
     return app
 
