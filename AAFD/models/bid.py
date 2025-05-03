@@ -8,9 +8,9 @@ class Bid(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tender_id = db.Column(UUID(as_uuid=True), db.ForeignKey('tenders.id', ondelete='CASCADE'), nullable=False)
     vendor_id = db.Column(UUID(as_uuid=True), db.ForeignKey('vendor_companies.id', ondelete='CASCADE'), nullable=False)
-    submitted_at = db.Column(TIMESTAMP, nullable=False, server_default=db.func.now())
+    submission_date = db.Column(TIMESTAMP, nullable=False, server_default=db.func.now())
     status = db.Column(bid_status_enum, nullable=False, default='submitted')
-    total_price = db.Column(NUMERIC(18,2))
+    amount = db.Column(NUMERIC(18,2))
     total_ai_score = db.Column(NUMERIC(6,2))
     total_final_score = db.Column(NUMERIC(6,2))
 

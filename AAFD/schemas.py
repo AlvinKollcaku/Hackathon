@@ -7,8 +7,8 @@ class PlainTenderSchema(Schema):
     title         = fields.Str(required=True)
     description   = fields.Str()
     publish_at    = fields.DateTime()
-    close_at      = fields.DateTime()
-    ceiling_fund  = fields.Decimal(as_string=True)
+    deadline      = fields.DateTime()
+    budget  = fields.Decimal(as_string=True)
     status = fields.Str(
         validate=validate.OneOf(tender_status_enum.enums)  # Access the enum values through the 'enums' property
     )
@@ -72,12 +72,12 @@ class PlainBidSchema(Schema):
     id                = fields.UUID(dump_only=True)
     tender_id         = fields.UUID(required=True, load_only=True)
     vendor_id         = fields.UUID(required=True, load_only=True)
-    submitted_at      = fields.DateTime(dump_only=True)
+    submission_date      = fields.DateTime(dump_only=True)
     status            = fields.Str(
                           validate=validate.OneOf(bid_status_enum.enums),
                           required=True
                        )
-    total_price       = fields.Decimal(as_string=True)
+    amount       = fields.Decimal(as_string=True)
     total_ai_score    = fields.Decimal(as_string=True)
     total_final_score = fields.Decimal(as_string=True)
 
@@ -175,14 +175,10 @@ class ScoreSchema(PlainScoreSchema):
     criterion  = fields.Nested(PlainCriterionSchema, dump_only=True)
     evaluator  = fields.Nested(PlainUserSchema,     dump_only=True)
 
-
-
-
 class EvaluationReportSchema(PlainEvaluationReportSchema):
     # assumes PlainTenderSchema and PlainUserSchema are defined earlier in schemas.py
     tender   = fields.Nested(PlainTenderSchema, dump_only=True)
     approver = fields.Nested(PlainUserSchema, dump_only=True)
-
 
 class TeamMemberSchema(PlainTeamMemberSchema):
     # assumes PlainBidSchema is defined earlier in schemas.py

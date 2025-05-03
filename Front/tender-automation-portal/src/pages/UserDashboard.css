@@ -1,0 +1,243 @@
+/* UserDashboard.css */
+
+/* Layout */
+.user-dashboard-bg {
+  min-height: 100vh;
+  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.user-dashboard-header {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+}
+.user-dashboard-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+.user-dashboard-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1e293b;
+}
+.user-dashboard-logout {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.user-dashboard-logout:hover {
+  background: #dc2626;
+}
+
+/* Main Content */
+.user-dashboard-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  flex: 1;
+  padding: 0 1.5rem 2rem 1.5rem;
+}
+
+.user-dashboard-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+/* Button */
+.user-dashboard-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.user-dashboard-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Table */
+.user-dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.user-dashboard-table th, .user-dashboard-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.user-dashboard-table th {
+  background: #f1f5f9;
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.user-dashboard-table tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+.user-dashboard-table tr:last-child {
+  border-bottom: none;
+}
+.user-dashboard-table tbody tr:hover {
+  background: #f3f4f6;
+}
+
+/* Status Badges */
+.user-dashboard-badge {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+.user-dashboard-badge-open {
+  background: #dcfce7;
+  color: #166534;
+}
+.user-dashboard-badge-closed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.user-dashboard-badge-awarded {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+/* Modal */
+.user-dashboard-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.user-dashboard-modal {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  max-width: 420px;
+  width: 100%;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  position: relative;
+}
+.user-dashboard-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+.user-dashboard-modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+.user-dashboard-modal-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.user-dashboard-modal-close:hover {
+  color: #1e293b;
+}
+
+/* Form */
+.user-dashboard-form label {
+  display: block;
+  font-size: 0.95rem;
+  color: #334155;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+.user-dashboard-form input,
+.user-dashboard-form textarea,
+.user-dashboard-form select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  background: #f8fafc;
+  color: #1e293b;
+  transition: border 0.2s;
+}
+.user-dashboard-form input:focus,
+.user-dashboard-form textarea:focus,
+.user-dashboard-form select:focus {
+  border-color: #2563eb;
+  outline: none;
+}
+.user-dashboard-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.user-dashboard-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.user-dashboard-form-cancel {
+  background: #e5e7eb;
+  color: #334155;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.user-dashboard-form-cancel:hover {
+  background: #cbd5e1;
+}
+
+/* Footer */
+.user-dashboard-footer {
+  background: #fff;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+  padding: 1.25rem 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-top: auto;
+}
+
+/* Error Alert */
+.user-dashboard-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+} 

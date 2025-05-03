@@ -5,6 +5,8 @@ from flask_smorest import Api
 
 from resources.userRoutes import user_bp as usersBlueprint
 from resources.tenderRoutes import bp as tendersBlueprint
+from resources.attachmentRoutes import attachments_bp
+
 
 from flask_jwt_extended import JWTManager
 from blocklist import BLOCKLIST
@@ -32,6 +34,10 @@ def create_app(db_url=None):
     #1) that we have defined and if we havent defined that we use sqlite which will create a data.db file
     #1)using environment variables to connect to DB so that you dont share the info when sharing the code
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    # Celery
+    CELERY_BROKER_URL = os.getenv("REDIS_URL")
+    CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
 
     db.init_app(app) # connecting both apps
     migrate = Migrate(app, db)
@@ -97,11 +103,12 @@ def create_app(db_url=None):
 
     api.register_blueprint(usersBlueprint)
     api.register_blueprint(tendersBlueprint)
+    api.register_blueprint(attachments_bp)
 
     return app
 
 app = create_app()
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 @app.route("/")
 def hello():

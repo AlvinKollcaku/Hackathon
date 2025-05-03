@@ -4,6 +4,7 @@ import Login from './components/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import SupplierDashboard from './pages/SupplierDashboard';
+import EvaluatorDashboard from './pages/EvaluatorDashboard';
 import ProtectedRoute from './utils/ProtectedRoute';
 import { isAuthenticated } from './utils/authUtils';
 import './App.css';
@@ -23,6 +24,7 @@ function App() {
                 if (role === 'admin') return <Navigate to="/admin" />;
                 if (role === 'proc_officer') return <Navigate to="/user" />;
                 if (role === 'vendor') return <Navigate to="/supplier" />;
+                if (role === 'evaluator') return <Navigate to="/evaluator" />;
                 return <Navigate to="/login" />;
               }}
             </ProtectedRoute>
@@ -43,6 +45,12 @@ function App() {
           <Route path="/supplier" element={
             <ProtectedRoute allowedRoles={['vendor']}>
               <SupplierDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/evaluator" element={
+            <ProtectedRoute allowedRoles={['evaluator']}>
+              <EvaluatorDashboard />
             </ProtectedRoute>
           } />
           
