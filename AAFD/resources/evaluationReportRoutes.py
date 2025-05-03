@@ -30,4 +30,3 @@ def get_report(report_id):
     report = EvaluationReport.query.get_or_404(report_id)
     return jsonify(eval_report_schema.dump(report)), 200
 
-@eval_report_bp.route('/<uuid:report_id>', methods=['PUT'])

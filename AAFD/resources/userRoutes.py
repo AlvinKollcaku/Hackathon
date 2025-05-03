@@ -17,32 +17,12 @@ from flask import jsonify
 from datetime import datetime
 from blocklist import BLOCKLIST
 
-user_bp = Blueprint('users', __name__, url_prefix='/users')
+user_bp = Blueprint('users', __name__,description="Operations on users")
 
 # Login schema now only requires email and password
 class LoginSchema(Schema):
     email = fields.Email(required=True)
     password = fields.Str(required=True)
-
-def admin_required():
-    claims = get_jwt()
-    if claims.get("role") != "admin":
-        abort(403, message="Admin privileges required.")
-
-def proc_officer_required():
-    claims = get_jwt()
-    if claims.get("role") != "proc_officer":
-        abort(403, message="Procurement Officer privileges required.")
-
-def evaluator_required():
-    claims = get_jwt()
-    if claims.get("role") != "evaluator":
-        abort(403, message="Evaluator privileges required.")
-
-def vendor_required():
-    claims = get_jwt()
-    if claims.get("role") != "vendor":
-        abort(403, message="Vendor privileges required.")
 
 def get_identity(user):
     return user.id

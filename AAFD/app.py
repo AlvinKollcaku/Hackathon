@@ -3,11 +3,8 @@ from DB import db
 from flask import Flask, jsonify
 from flask_smorest import Api
 
-from resources.users import blp as usersBlueprint
-from resources.flights import blp as flightsBlueprint
-from resources.air_control_department import blp as aircontrol_blp
-from resources.admin import admin_blp,log_blp
-from resources.passenger import blp as passangersBlueprint
+from resources.userRoutes import user_bp as usersBlueprint
+from resources.tenderRoutes import bp as tendersBlueprint
 
 from flask_jwt_extended import JWTManager
 from blocklist import BLOCKLIST
@@ -99,11 +96,7 @@ def create_app(db_url=None):
         )
 
     api.register_blueprint(usersBlueprint)
-    api.register_blueprint(flightsBlueprint)
-    api.register_blueprint(aircontrol_blp)
-    api.register_blueprint(admin_blp)
-    api.register_blueprint(log_blp)
-    api.register_blueprint(passangersBlueprint)
+    api.register_blueprint(tendersBlueprint)
 
     return app
 

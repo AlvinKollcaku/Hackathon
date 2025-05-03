@@ -9,10 +9,10 @@ class PlainTenderSchema(Schema):
     publish_at    = fields.DateTime()
     close_at      = fields.DateTime()
     ceiling_fund  = fields.Decimal(as_string=True)
-    status        = fields.Str(
-        validate=validate.OneOf([s.value for s in tender_status_enum.enums])
+    status = fields.Str(
+        validate=validate.OneOf(tender_status_enum.enums)  # Access the enum values through the 'enums' property
     )
-    created_by    = fields.UUID(load_only=True, required=True)
+    created_by    = fields.UUID(dump_only=True)
     created_at    = fields.DateTime(dump_only=True)
 
 class PlainVendorCompanySchema(Schema):
@@ -38,7 +38,7 @@ class PlainUserSchema(Schema):
     # Enum stored in DB → validate against enum values
     role = fields.Str(
         required=True,
-        validate=validate.OneOf([r.value for r in user_role_enum.enums])
+        validate=validate.OneOf(user_role_enum.enums)
     )
 
     created_at  = fields.DateTime(dump_only=True)
@@ -53,7 +53,7 @@ class PlainCriterionSchema(Schema):
     name        = fields.Str(required=True)
     type        = fields.Str(
         required=True,
-        validate=validate.OneOf([opt.value for opt in criterion_type_enum.enums])
+        validate=validate.OneOf(criterion_type_enum.enums)
     )
     weight_pct  = fields.Decimal(as_string=True, required=True)
     mandatory   = fields.Bool(required=True)
@@ -74,7 +74,7 @@ class PlainBidSchema(Schema):
     vendor_id         = fields.UUID(required=True, load_only=True)
     submitted_at      = fields.DateTime(dump_only=True)
     status            = fields.Str(
-                          validate=validate.OneOf([s.value for s in bid_status_enum.enums]),
+                          validate=validate.OneOf(bid_status_enum.enums),
                           required=True
                        )
     total_price       = fields.Decimal(as_string=True)

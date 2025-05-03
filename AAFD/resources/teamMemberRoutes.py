@@ -27,4 +27,3 @@ def create_team_member():
     db.session.commit()
     return jsonify(tm_schema.dump(tm)), 201
 
-@tm_bp.route('/<uuid:tm_id>', methods=['GET'])
