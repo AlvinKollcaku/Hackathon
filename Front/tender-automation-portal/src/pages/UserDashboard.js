@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { logout } from '../services/authService';
 import { Plus, Edit, Trash2, Eye, Award, X, FileText, Upload } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 
 const UserDashboard = () => {
+  const navigate = useNavigate()
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,9 +50,8 @@ const UserDashboard = () => {
   }, []);
 
   const handleLogout = () => {
-    // Instead of using the auth service, we'll just redirect to login
-    // This simulates a logout by taking the user to the login page
-    window.location.href = '/login';
+    logout();
+    navigate('/login');
   };
 
   const handlePublishTender = async (e) => {
@@ -699,3 +702,5 @@ const UserDashboard = () => {
         <p>© {new Date().getFullYear()} Tender Automation Portal | Procurement Officer Dashboard</p>
       </footer>
     </div>)}
+
+export default UserDashboard;
