@@ -72,48 +72,98 @@ const UserDashboard = () => {
 
   const handlePublishTender = async (e) => {
     e.preventDefault();
+    setError(null);
+  
     try {
-      const formData = new FormData();
-      
-      // Add tender details to formData
-      Object.keys(newTender).forEach(key => {
-        formData.append(key, newTender[key]);
+      const token = localStorage.getItem('access_token');
+  
+      // 1) Build a payload that marshmallow will accept
+      //    - <input type="datetime-local"> gives "YYYY-MM-DDTHH:mm"
+      //    - new Date(...) parses that as local time, toISOString() -> "YYYY-MM-DDTHH:mm:ss.sssZ"
+      const isoDeadline = new Date(newTender.deadline).toISOString();
+  
+      const payload = {
+        title:       newTender.title,
+        description: newTender.description,
+        deadline:    isoDeadline,                    // full ISO string
+        budget:      parseFloat(newTender.budget),  // ensure it's a number
+        // if your schema still needs it, uncomment and normalize:
+        // publish_at: newTender.publish_at
+        //   ? new Date(newTender.publish_at).toISOString()
+        //   : new Date().toISOString(),
+      };
+  
+      // 2) Create the tender
+      const createRes = await fetch('http://127.0.0.1:5000/tenders', {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify(payload),
       });
-      
-      // Add file if selected
+  
+      if (!createRes.ok) {
+        const errJson = await createRes.json().catch(() => ({}));
+        console.error('🛑 Tender create failed with:', errJson);
+        // build a human-readable error message
+        const msg = errJson.errors
+          ? Object.entries(errJson.errors.json || {})
+              .map(([field, errs]) => `${field}: ${errs.join(', ')}`)
+              .join(' | ')
+          : errJson.msg || createRes.statusText;
+        throw new Error(msg);
+      }
+  
+      // 3) Pull out the new tender ID
+      const createdTender = await createRes.json();
+  
+      // 4) If there's a file to upload, send it to /attachments
       if (selectedFile) {
+        const formData = new FormData();
         formData.append('file', selectedFile);
+  
+        const uploadRes = await fetch(
+          `http://127.0.0.1:5000/tenders/${createdTender.id}/attachments`,
+          {
+            method: 'POST',
+            headers: {
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: formData,
+          }
+        );
+  
+        if (!uploadRes.ok) {
+          const errJson = await uploadRes.json().catch(() => ({}));
+          console.error('🛑 Attachment upload failed with:', errJson);
+          throw new Error(errJson.msg || 'Failed to upload tender document');
+        }
       }
-      
-      const response = await fetch('http://127.0.0.1:5000/tenders', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to publish tender');
-      }
-      
+  
+      // 5) Success — refresh your list and reset the form
       await fetchTenders();
       setShowPublishModal(false);
       setNewTender({
-        title: '',
+        title:       '',
         description: '',
-        deadline: '',
-        budget: '',
-        status: 'Open'
+        deadline:    '',
+        budget:      '',
+        status:      'Open'
       });
       setSelectedFile(null);
+  
     } catch (err) {
       setError('Error publishing tender: ' + err.message);
     }
   };
+  
 
   const handleUpdateTender = async (e) => {
     e.preventDefault();
     try {
         const { title, description, deadline, budget, status } = currentTender;
-const payload = { title, description, deadline, budget };
+const payload = { title, description, deadline, budget ,status};
 
       const response = await fetch(`http://127.0.0.1:5000/tenders/${currentTender.id}`, {
         method: 'PUT',

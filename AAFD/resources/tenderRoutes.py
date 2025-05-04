@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask.views           import MethodView
 from flask_smorest         import abort, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -31,25 +33,47 @@ class TenderList(MethodView):
         return Tender.query.all()
 
     #@jwt_required()
-    @bp.arguments(PlainTenderSchema)
+    @bp.arguments(PlainTenderSchema)  # only pulls title, description, deadline, budget
     @bp.response(201, TenderSchema)
     def post(self, tender_data):
-        """Publish a new tender"""
-        # Get user ID from JWT
-        #proc_officer_required()
-        current_user_id = get_jwt_identity()
+        """Create & publish a tender; optionally upload a file at the same time."""
+        print("Heloooooooooo")
+        try:
+            user_id = "22222222-2222-2222-2222-222222222222"
+            print(tender_data)
 
-        # Create tender with user ID
-        tender = Tender(
-            **tender_data,
-            created_by=current_user_id
-        )
+            # 1) Build the Tender with published status + timestamp
+            tender = Tender(
+                **tender_data,
+                created_at=datetime.utcnow(),
+                created_by=user_id,
+            )
+            db.session.add(tender)
+            db.session.flush()  # so tender.id exists below
 
-        print(tender)
+            # 2) If the client also sent a file in multipart/form-data, handle it now
+            if 'file' in request.files:
+                file = request.files['file']
+                stream = io.BytesIO(file.read())
+                stream.seek(0)
+                public_url = upload_file_to_drive(
+                    stream, file.filename, file.mimetype
+                )
 
-        db.session.add(tender)
-        db.session.commit()
-        return tender
+                attachment = Attachment(
+                    owner_type='tender',
+                    owner_id=tender.id,
+                    file_name=file.filename,
+                    file_url=public_url
+                )
+                db.session.add(attachment)
+
+            db.session.commit()
+            return tender
+        except Exception as e:
+            print("Error creating tender:", str(e))  # Log any exceptions
+            db.session.rollback()
+            abort(422, description=str(e))
 
 #
 # 2) Retrieve, update (including deadlines), delete a tender
