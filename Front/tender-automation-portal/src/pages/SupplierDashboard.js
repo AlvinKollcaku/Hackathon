@@ -10,6 +10,9 @@ const SupplierDashboard = () => {
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadingTenderId, setUploadingTenderId] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [currentTender, setCurrentTender] = useState(null);
 
   const handleLogout = () => {
     logout();
@@ -51,28 +54,74 @@ const SupplierDashboard = () => {
   const handleUpload = async (tenderId) => {
     if (!selectedFile) return;
     setUploadingTenderId(tenderId);
+    const token = localStorage.getItem('access_token');
+  
     try {
+      // 1️⃣ create/get the bid
+      const bidResp = await fetch(
+        `http://127.0.0.1:5000/tenders/${tenderId}/bids`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ /* if you need extra info */ })
+        }
+      );
+      if (!bidResp.ok) throw new Error('Could not create bid');
+      const { id: bidId } = await bidResp.json();
+  
+      // 2️⃣ upload the file
       const formData = new FormData();
       formData.append('file', selectedFile);
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://127.0.0.1:5000/tenders/${tenderId}/attachments`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.msg || response.statusText);
+  
+      const uploadResp = await fetch(
+        `http://127.0.0.1:5000/tenders/${tenderId}/bids/${bidId}/attachments`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData,
+        }
+      );
+      if (!uploadResp.ok) {
+        const errJson = await uploadResp.json().catch(() => ({}));
+        throw new Error(errJson.msg || uploadResp.statusText);
       }
+  
+      alert('Bid uploaded successfully!');
       setSelectedFile(null);
-      alert('Document uploaded successfully!');
     } catch (err) {
-      setError('Error uploading document: ' + err.message);
+      setError('Error uploading bid: ' + err.message);
     } finally {
       setUploadingTenderId(null);
     }
+  };
+  
+
+
+  const fetchTenderAttachments = async (tenderId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://127.0.0.1:5000/tenders/${tenderId}/attachments/tender`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch attachments');
+      }
+      const data = await response.json();
+      setAttachments(data);
+    } catch (err) {
+      setAttachments([]);
+    }
+  };
+
+  const handleViewAttachments = async (tender) => {
+    setCurrentTender(tender);
+    await fetchTenderAttachments(tender.id);
+    setShowModal(true);
   };
 
   return (
@@ -117,6 +166,9 @@ const SupplierDashboard = () => {
                         {uploadingTenderId === tender.id ? 'Uploading...' : 'Upload'}
                       </button>
                     </form>
+                    <button className="user-dashboard-btn" style={{marginTop: 8}} onClick={() => handleViewAttachments(tender)}>
+                      View Attachments
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -133,6 +185,36 @@ const SupplierDashboard = () => {
       <footer className="user-dashboard-footer">
         <p>© {new Date().getFullYear()} Tender Automation Portal | Vendor Dashboard</p>
       </footer>
+
+      {showModal && currentTender && (
+        <div className="user-dashboard-modal-bg">
+          <div className="user-dashboard-modal">
+            <div className="user-dashboard-modal-header">
+              <span className="user-dashboard-modal-title">Tender Attachments: {currentTender.title}</span>
+              <button onClick={() => setShowModal(false)} className="user-dashboard-modal-close">×</button>
+            </div>
+            <div className="user-dashboard-modal-content">
+              {attachments.length > 0 ? (
+                <ul className="user-dashboard-modal-list">
+                  {attachments.map((attachment) => (
+                    <li key={attachment.id} className="user-dashboard-modal-list-item">
+                      <div className="user-dashboard-modal-list-item-content">
+                        <span className="user-dashboard-modal-list-item-text">{attachment.file_name}</span>
+                        <a href={attachment.file_url} download className="user-dashboard-modal-list-item-link">Download</a>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="user-dashboard-modal-text-italic">No attachments available</p>
+              )}
+              <div className="user-dashboard-modal-actions">
+                <button onClick={() => setShowModal(false)} className="user-dashboard-btn">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

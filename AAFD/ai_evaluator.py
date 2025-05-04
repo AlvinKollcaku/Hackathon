@@ -40,6 +40,15 @@ Please:
 2. Assign a score from 0–100 for each item.
 3. Calculate an overall total score out of 100.
 4. Provide a brief human-readable summary.
+5. Notify about important missing fields or signatures
+
+Important is that the criteria in the bid table must exactly match the corresponding
+criteria of the requirements table. If the requirements table asks for example for 4 people in staff
+with specified qualifications, that is how it should be in the bid table to consider it as passed 
+criteria.
+
+Most important is to base your evaluation on the evaluation criteria information of the requirements
+if it is present.
 
 Return a JSON object with keys:
 - `evaluations`: array of {{ requirement, meets, score }}

@@ -7,7 +7,7 @@ from resources.userRoutes import user_bp as usersBlueprint
 from resources.tenderRoutes import bp as tendersBlueprint
 from resources.attachmentRoutes import attachments_bp
 from resources.ai_routes import ai_bp
-
+from resources.bidRoutes import bp as bidsBlueprint
 
 from flask_jwt_extended import JWTManager
 from blocklist import BLOCKLIST
@@ -106,6 +106,7 @@ def create_app(db_url=None):
     api.register_blueprint(tendersBlueprint)
     api.register_blueprint(attachments_bp)
     api.register_blueprint(ai_bp)
+    api.register_blueprint(bidsBlueprint)
 
     return app
 

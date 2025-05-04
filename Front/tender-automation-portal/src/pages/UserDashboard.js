@@ -27,6 +27,10 @@ const UserDashboard = () => {
   
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Add state and handlers for per-row file upload
+  const [rowFile, setRowFile] = useState({});
+  const [rowUploading, setRowUploading] = useState({});
+
   const fetchTenders = async () => {
     setLoading(true);
     try {
@@ -250,13 +254,50 @@ const payload = { title, description, deadline, budget };
       });
       
       if (!response.ok) {
-        throw new Error('Failed to upload attachment');
+        // try to pull the JSON error out of the response
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || err.message || 'Upload failed');
       }
+      
       
       await fetchTenderAttachments(currentTender.id);
       setSelectedFile(null);
     } catch (err) {
       setError('Error uploading attachment: ' + err.message);
+    }
+  };
+
+  const handleFileChangeForRow = (e, tenderId) => {
+    setRowFile(prev => ({ ...prev, [tenderId]: e.target.files[0] }));
+  };
+
+  const uploadAttachmentForRow = async (tenderId) => {
+    if (!rowFile[tenderId]) return;
+    setRowUploading(prev => ({ ...prev, [tenderId]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('file', rowFile[tenderId]);
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://127.0.0.1:5000/tenders/${tenderId}/attachments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        // try to pull the JSON error out of the response
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || err.message || 'Upload failed');
+      }
+      
+      // Optionally, fetch the new file info and update tenders state
+      await fetchTenders();
+      setRowFile(prev => ({ ...prev, [tenderId]: null }));
+    } catch (err) {
+      setError('Error uploading document: ' + err.message);
+    } finally {
+      setRowUploading(prev => ({ ...prev, [tenderId]: false }));
     }
   };
 
@@ -310,6 +351,7 @@ const payload = { title, description, deadline, budget };
                   <th>Budget</th>
                   <th>Status</th>
                   <th>Actions</th>
+                  <th>Upload/Download</th>
                 </tr>
               </thead>
               <tbody>
@@ -330,6 +372,15 @@ const payload = { title, description, deadline, budget };
                         <button onClick={() => handleEditTender(tender)} title="Edit" className="user-dashboard-btn" style={{background: '#fff', color: '#eab308', border: '1px solid #eab308', padding: '0.25rem 0.75rem'}}><Edit size={18} /></button>
                         <button onClick={() => handleDeleteTender(tender.id)} title="Delete" className="user-dashboard-btn" style={{background: '#fff', color: '#ef4444', border: '1px solid #ef4444', padding: '0.25rem 0.75rem'}}><Trash2 size={18} /></button>
                       </div>
+                    </td>
+                    <td>
+                      <form onSubmit={e => { e.preventDefault(); uploadAttachmentForRow(tender.id); }} style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                        <input type="file" onChange={e => handleFileChangeForRow(e, tender.id)} />
+                        <button type="submit" className="user-dashboard-btn">Upload</button>
+                      </form>
+                      {tender.uploadedFile && (
+                        <a href={tender.uploadedFile.url} download className="user-dashboard-modal-list-item-link">{tender.uploadedFile.name}</a>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -443,9 +494,9 @@ const payload = { title, description, deadline, budget };
                       {attachments.map((attachment) => (
                         <li key={attachment.id} className="user-dashboard-modal-list-item">
                           <div className="user-dashboard-modal-list-item-content">
-                            <span className="user-dashboard-modal-list-item-text">{attachment.fileName}</span>
+                            <span className="user-dashboard-modal-list-item-text">{attachment.file_name}</span>
                             <a 
-                              href={attachment.fileUrl} 
+                              href={attachment.file_url} 
                               download
                               className="user-dashboard-modal-list-item-link"
                             >

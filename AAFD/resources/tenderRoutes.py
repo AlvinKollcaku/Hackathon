@@ -5,6 +5,9 @@ from marshmallow import Schema, fields
 from flask import request, jsonify
 
 import io
+
+from sqlalchemy.exc import SQLAlchemyError
+
 from DB       import db
 from models   import Tender, Attachment, Bid
 from schemas  import (
@@ -13,7 +16,6 @@ from schemas  import (
 )
 from roleBased import proc_officer_required
 from google_drive import upload_file_to_drive
-
 
 bp = Blueprint('tenders', __name__, url_prefix='/tenders')
 
@@ -25,6 +27,7 @@ class TenderList(MethodView):
     @bp.response(200, TenderSchema(many=True))
     def get(self):
         """List all tenders"""
+        #proc_officer_required()
         return Tender.query.all()
 
     #@jwt_required()
@@ -33,7 +36,7 @@ class TenderList(MethodView):
     def post(self, tender_data):
         """Publish a new tender"""
         # Get user ID from JWT
-        proc_officer_required()
+        #proc_officer_required()
         current_user_id = get_jwt_identity()
 
         # Create tender with user ID
@@ -41,6 +44,8 @@ class TenderList(MethodView):
             **tender_data,
             created_by=current_user_id
         )
+
+        print(tender)
 
         db.session.add(tender)
         db.session.commit()
@@ -55,7 +60,7 @@ class TenderDetail(MethodView):
     @bp.response(200, TenderSchema)
     def get(self, tender_id):
         """Get a single tender"""
-        #Anyone can access the tenders
+
         return Tender.query.get_or_404(tender_id)
 
     @bp.arguments(PlainTenderSchema)
@@ -161,13 +166,99 @@ class TenderClose(MethodView):
         db.session.commit()
         return tender
 
+import uuid
+
 # Get all bid for a specific tender
-@bp.route('/<uuid:tender_id>/bids')
+@bp.route("/<uuid:tender_id>/bids")
 class TenderBids(MethodView):
+
     @bp.response(200, BidSchema(many=True))
     def get(self, tender_id):
-        """List all bids for a specific tender"""
-        #proc_officer_required()
+        """List all bids for a specific tender."""
         tender = Tender.query.get_or_404(tender_id)
         return tender.bids
+
+    @bp.response(201, BidSchema)
+    def post(self, tender_id):
+        """
+        Create a new bid record for this tender.
+        Expects JSON: { "vendor_id": "<uuid-of-vendor>" }
+        """
+        data = request.get_json() or {}
+        vendor_id = '11111111-1111-1111-1111-111111111111'
+        # ensure the tender exists
+        Tender.query.get_or_404(tender_id)
+
+        # create the Bid (we’re skipping amount & auth for now)
+        bid = Bid(
+            tender_id=tender_id,
+            vendor_id=vendor_id
+        )
+        db.session.add(bid)
+        db.session.commit()
+
+        return bid
+#---------------------------------
+
+@bp.route("/<uuid:tender_id>/attachments/tender")
+class TenderOnlyAttachments(MethodView):
+
+    @bp.response(200, AttachmentSchema(many=True))
+    def get(self, tender_id):
+        """For procurement_officer & vendor: just the original tender files."""
+        return (
+            Attachment.query
+            .filter_by(owner_type="tender", owner_id=tender_id)
+            .order_by(Attachment.created_at.desc())
+            .all()
+        )
+
+
+@bp.route("/<uuid:tender_id>/bids/<uuid:bid_id>/attachments")
+class BidAttachments(MethodView):
+
+    @bp.response(200, AttachmentSchema(many=True))
+    def get(self, tender_id, bid_id):
+        """For a vendor (or evaluator) to list attachments of a _specific_ bid."""
+        # you might later check that bid.tender_id == tender_id
+        return (
+            Attachment.query
+            .filter_by(owner_type="bid", owner_id=bid_id)
+            .order_by(Attachment.created_at.desc())
+            .all()
+        )
+
+@bp.route("/<uuid:tender_id>/attachments/all")
+class AllAttachments(MethodView):
+
+    @bp.response(200, AttachmentSchema(many=True))
+    def get(self, tender_id):
+        """For evaluator: both the tender files and all bid files for that tender."""
+        # 1) tender attachments
+        tender_q = (
+            Attachment.query
+            .filter_by(owner_type="tender", owner_id=tender_id)
+        )
+
+        # 2) collect all bids for this tender
+        bid_ids_subq = (
+            db.session.query(Bid.id)
+            .filter(Bid.tender_id == tender_id)
+            .subquery()
+        )
+        bid_q = (
+            Attachment.query
+            .filter(
+                Attachment.owner_type == "bid",
+                Attachment.owner_id.in_(bid_ids_subq)
+            )
+        )
+
+        # union and return
+        return (
+            tender_q
+            .union_all(bid_q)
+            .order_by(Attachment.created_at.desc())
+            .all()
+        )
 

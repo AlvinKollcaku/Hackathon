@@ -42,48 +42,32 @@ const EvaluatorDashboard = () => {
     }
   };
 
-  const fetchTenderAttachments = async (tenderId) => {
+  const fetchTenderAttachmentsAndBids = async (tenderId) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://127.0.0.1:5000/tenders/${tenderId}/attachments`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch attachments');
-      }
-      const data = await response.json();
-      setAttachments(data);
-    } catch (err) {
+      const response = await fetch(
+        `http://127.0.0.1:5000/tenders/${tenderId}/attachments/all`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      if (!response.ok) throw new Error('Failed to fetch');
+  
+      const data = await response.json();  // this is an Array<Attachment>
+      // split by owner_type:
+      const tenderAttachments = data.filter(att => att.owner_type === 'tender');
+      const bidAttachments    = data.filter(att => att.owner_type === 'bid');
+  
+      setAttachments(tenderAttachments);
+      setBids(bidAttachments);
+    } catch {
       setAttachments([]);
-    }
-  };
-
-  const fetchTenderBids = async (tenderId) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://127.0.0.1:5000/tenders/${tenderId}/bids`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch bids');
-      }
-      const data = await response.json();
-      setBids(data);
-    } catch (err) {
       setBids([]);
     }
   };
+  
 
   const handleViewTender = async (tender) => {
     setCurrentTender(tender);
-    await Promise.all([
-      fetchTenderAttachments(tender.id),
-      fetchTenderBids(tender.id)
-    ]);
+    await fetchTenderAttachmentsAndBids(tender.id);
     setShowModal(true);
   };
 
@@ -161,8 +145,8 @@ const EvaluatorDashboard = () => {
                     {attachments.map((attachment) => (
                       <li key={attachment.id} className="user-dashboard-modal-list-item">
                         <div className="user-dashboard-modal-list-item-content">
-                          <span className="user-dashboard-modal-list-item-text">{attachment.fileName}</span>
-                          <a href={attachment.fileUrl} download className="user-dashboard-modal-list-item-link">Download</a>
+                          <span className="user-dashboard-modal-list-item-text">{attachment.file_name}</span>
+                          <a href={attachment.file_url} download className="user-dashboard-modal-list-item-link">Download</a>
                         </div>
                       </li>
                     ))}
@@ -178,8 +162,8 @@ const EvaluatorDashboard = () => {
                     {bids.map((bid) => (
                       <li key={bid.id} className="user-dashboard-modal-list-item">
                         <div className="user-dashboard-modal-list-item-content">
-                          <span className="user-dashboard-modal-list-item-text">{bid.vendorName} - ${bid.amount.toLocaleString()}</span>
-                          <a href={bid.fileUrl} download className="user-dashboard-modal-list-item-link">Download Bid</a>
+                          <span className="user-dashboard-modal-list-item-text">{bid.vendorName ? `${bid.vendorName} - ` : ''}{bid.file_name}</span>
+                          <a href={bid.file_url} download className="user-dashboard-modal-list-item-link">Download Bid</a>
                         </div>
                       </li>
                     ))}
